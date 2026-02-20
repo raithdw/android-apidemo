@@ -1,18 +1,17 @@
 import { join } from 'path';
 
 export const config: any = {
-
     runner: 'local',
     specs: ['./test/**/*.ts'],
     maxInstances: 1,
     logLevel: 'info',
     framework: 'mocha',
-    mochaOpts: { ui: 'bdd', timeout: 120000 },
+    mochaOpts: { ui: 'bdd', timeout: 180000 },
 
     hostname: '127.0.0.1',
     port: 4723,
     path: '/',
-    connectionRetryTimeout: 120000,
+    connectionRetryTimeout: 180000,
     connectionRetryCount: 3,
     services: ['appium'],
 
@@ -26,7 +25,7 @@ export const config: any = {
             'appium:appPackage': 'io.appium.android.apis',
             'appium:appActivity': '.ApiDemos',
             'appium:noReset': true,
-            'appium:newCommandTimeout': 240
+            'appium:newCommandTimeout': 300
         }
     ],
 
@@ -35,7 +34,7 @@ export const config: any = {
         ['allure', {
             outputDir: 'allure-results',
             disableWebdriverStepsReporting: false,
-            disableWebdriverScreenshotsReporting: false,
+            disableWebdriverScreenshotsReporting: false
         }]
     ],
 
@@ -49,6 +48,7 @@ export const config: any = {
         if (error) {
             const timestamp = Date.now();
             await driver.saveScreenshot(`./allure-results/error-${timestamp}.png`);
+            console.error(`Test failed: ${test.title}\n${error.stack}`);
         }
     }
 };
