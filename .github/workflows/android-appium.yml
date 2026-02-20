@@ -9,7 +9,7 @@ on:
 jobs:
   run-tests:
     runs-on: ubuntu-22.04
-    timeout-minutes: 30
+    timeout-minutes: 40
 
     steps:
       # Checkout code
@@ -55,7 +55,7 @@ jobs:
           key: android-${{ runner.os }}-33-${{ hashFiles('**/build.gradle') }}
           restore-keys: android-${{ runner.os }}-33-
 
-      # Set up Android Emulator
+      # Set up headless Android Emulator
       - name: Set up Android Emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -63,7 +63,9 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel
-          emulator-options: -no-window -no-audio -gpu swiftshader_indirect -no-boot-anim -no-snapshot-load
+          emulator-options: >-
+            -no-window -no-audio -gpu swiftshader_indirect
+            -no-boot-anim -no-snapshot-load -accel off
           script: |
             echo "Waiting for emulator to boot..."
             adb wait-for-device
@@ -79,13 +81,22 @@ jobs:
               echo "Emulator failed to boot"
               exit 1
             fi
+
             echo "Unlocking screen..."
             adb shell input keyevent 82
             echo "Emulator ready"
 
-      # Start Appium server
+      # Start Appium server (wait for UiAutomator2 session)
       - name: Start Appium
-        run: npx appium --port 4723 --relaxed-security &
+        run: |
+          npx appium --port 4723 --relaxed-security &
+          # Wait for Appium to be ready
+          for i in {1..30}; do
+            curl -s http://localhost:4723/wd/hub/status | grep -q '"ready":true' && break
+            echo "Waiting for Appium server..."
+            sleep 2
+          done
+          echo "Appium ready"
 
       # Run WebdriverIO tests
       - name: Run WebdriverIO tests
@@ -154,4 +165,4 @@ jobs:
       # Print report link
       - name: Allure report link
         run: |
-          echo 'Allure report: https://raithdw.github.io/android-apidemo/index.html' >> $GITHUB_STEP_SUMMARY
+          echo "Allure report: https://raithdw.github.io/android-apidemo/index.html" >> $GITHUB_STEP_SUMMARY
